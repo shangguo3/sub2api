@@ -20,13 +20,12 @@ FROM ${NODE_IMAGE} AS frontend-builder
 
 WORKDIR /app/frontend
 
-# Install pnpm
-RUN corepack enable && corepack prepare pnpm@latest --activate
+# Install pnpm (pin to v9 to avoid v10 approve-builds interactive prompt)
+RUN corepack enable && corepack prepare pnpm@9.15.4 --activate
 
 # Install dependencies first (better caching)
 COPY frontend/package.json frontend/pnpm-lock.yaml ./
-ENV PNPM_ENABLE_PRE_POST_SCRIPTS=true
-RUN pnpm install --frozen-lockfile --config.onlyBuiltDependencies="[]"
+RUN pnpm install --frozen-lockfile
 
 # Copy frontend source and build
 COPY frontend/ ./
