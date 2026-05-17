@@ -5278,6 +5278,7 @@ func (s *GatewayService) buildUpstreamRequestAnthropicAPIKeyPassthrough(
 		clientHeaders = c.Request.Header
 	}
 	s.applyChannelHeaderOverride(ctx, req, token, clientHeaders)
+	ApplyAccountHeaderOverride(account, req, token, clientHeaders)
 
 	return req, nil
 }
@@ -5768,6 +5769,7 @@ func (s *GatewayService) executeBedrockUpstream(
 			clientHeaders = c.Request.Header
 		}
 		s.applyChannelHeaderOverride(ctx, upstreamReq, apiKey, clientHeaders)
+		ApplyAccountHeaderOverride(account, upstreamReq, apiKey, clientHeaders)
 
 		resp, err = s.httpUpstream.DoWithTLS(upstreamReq, proxyURL, account.ID, account.Concurrency, nil)
 		if err != nil {
@@ -6174,6 +6176,8 @@ func (s *GatewayService) buildUpstreamRequest(ctx context.Context, c *gin.Contex
 
 	// 渠道请求头覆盖（最高优先级，在所有 header 设置之后应用）
 	s.applyChannelHeaderOverride(ctx, req, token, clientHeaders)
+	// 账号级请求头覆盖（优先级高于渠道）
+	ApplyAccountHeaderOverride(account, req, token, clientHeaders)
 
 	return req, nil
 }
@@ -6235,6 +6239,7 @@ func (s *GatewayService) buildUpstreamRequestAnthropicVertex(
 		clientHeaders = c.Request.Header
 	}
 	s.applyChannelHeaderOverride(ctx, req, token, clientHeaders)
+	ApplyAccountHeaderOverride(account, req, token, clientHeaders)
 
 	return req, nil
 }

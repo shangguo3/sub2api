@@ -3225,6 +3225,7 @@ func (s *OpenAIGatewayService) buildUpstreamRequestOpenAIPassthrough(
 		clientHeaders = c.Request.Header
 	}
 	ApplyChannelHeaderOverrideFromContext(ctx, s.channelService, req, token, clientHeaders)
+	ApplyAccountHeaderOverride(account, req, token, clientHeaders)
 
 	return req, nil
 }
@@ -3937,6 +3938,7 @@ func (s *OpenAIGatewayService) buildUpstreamRequest(ctx context.Context, c *gin.
 		clientHeaders = c.Request.Header
 	}
 	ApplyChannelHeaderOverrideFromContext(ctx, s.channelService, req, token, clientHeaders)
+	ApplyAccountHeaderOverride(account, req, token, clientHeaders)
 
 	return req, nil
 }

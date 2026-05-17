@@ -269,3 +269,16 @@ func ApplyChannelHeaderOverrideFromContext(ctx context.Context, channelService *
 		override.Apply(req, token, clientHeaders)
 	}
 }
+
+// ApplyAccountHeaderOverride 从账号的 Extra["header_override"] 读取配置并应用到上游请求。
+// 账号级覆盖优先级高于渠道级覆盖，在渠道覆盖之后调用。
+func ApplyAccountHeaderOverride(account *Account, req *http.Request, token string, clientHeaders http.Header) {
+	raw := account.GetHeaderOverride()
+	if raw == nil {
+		return
+	}
+	override := ParseHeaderOverride(raw)
+	if override != nil {
+		override.Apply(req, token, clientHeaders)
+	}
+}

@@ -91,6 +91,22 @@ func (a *Account) BillingRateMultiplier() float64 {
 	return *a.RateMultiplier
 }
 
+// GetHeaderOverride 从 Extra 中读取请求头覆盖配置（JSON 字符串）。
+func (a *Account) GetHeaderOverride() *string {
+	if a == nil || a.Extra == nil {
+		return nil
+	}
+	raw, ok := a.Extra["header_override"]
+	if !ok {
+		return nil
+	}
+	s, ok := raw.(string)
+	if !ok || s == "" {
+		return nil
+	}
+	return &s
+}
+
 func (a *Account) EffectiveLoadFactor() int {
 	if a == nil {
 		return 1

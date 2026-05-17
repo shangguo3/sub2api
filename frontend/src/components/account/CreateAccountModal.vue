@@ -2479,6 +2479,37 @@
         <p class="input-hint">{{ t('admin.accounts.expiresAtHint') }}</p>
       </div>
 
+      <!-- 请求头覆盖 -->
+      <div class="border-t border-gray-200 pt-4 dark:border-dark-600">
+        <label class="input-label">{{ t('admin.accounts.headerOverride', '请求头覆盖') }}</label>
+        <p class="mb-2 text-xs text-gray-400">
+          {{ t('admin.accounts.headerOverrideHint', '此项可选，用于覆盖请求头参数。JSON 格式，支持占位符 {api_key}、{client_header:X-Foo}，通配符 {"*": true}，正则 {"re:<pattern>": true}') }}
+        </p>
+        <textarea
+          v-model="form.header_override"
+          rows="4"
+          class="input font-mono text-xs"
+          :placeholder="'格式示例：\n{\n  &quot;User-Agent&quot;: &quot;Mozilla/5.0 ...&quot;,\n  &quot;Authorization&quot;: &quot;Bearer {api_key}&quot;\n}'"
+        ></textarea>
+        <div class="mt-1.5 flex flex-wrap gap-1.5">
+          <button
+            type="button"
+            class="rounded border border-gray-200 px-2 py-0.5 text-xs text-gray-500 hover:bg-gray-50 dark:border-dark-600 dark:text-gray-400 dark:hover:bg-dark-700"
+            @click="form.header_override = '{\"*\": true}'"
+          >{{ t('admin.accounts.headerOverrideWildcard', '填入透传模版') }}</button>
+          <button
+            type="button"
+            class="rounded border border-gray-200 px-2 py-0.5 text-xs text-gray-500 hover:bg-gray-50 dark:border-dark-600 dark:text-gray-400 dark:hover:bg-dark-700"
+            @click="form.header_override = '{\n  &quot;User-Agent&quot;: &quot;Mozilla/5.0&quot;,\n  &quot;Authorization&quot;: &quot;Bearer {api_key}&quot;\n}'"
+          >{{ t('admin.accounts.headerOverrideTemplate', '填入模板') }}</button>
+          <button
+            type="button"
+            class="rounded border border-gray-200 px-2 py-0.5 text-xs text-gray-500 hover:bg-gray-50 dark:border-dark-600 dark:text-gray-400 dark:hover:bg-dark-700"
+            @click="() => { try { form.header_override = JSON.stringify(JSON.parse(form.header_override), null, 2) } catch {} }"
+          >{{ t('admin.accounts.headerOverrideFormat', '格式化') }}</button>
+        </div>
+      </div>
+
       <!-- OpenAI 自动透传开关（OAuth/API Key） -->
       <div
         v-if="form.platform === 'openai'"
@@ -3497,7 +3528,8 @@ const form = reactive({
   priority: 1,
   rate_multiplier: 1,
   group_ids: [] as number[],
-  expires_at: null as number | null
+  expires_at: null as number | null,
+  header_override: '',
 })
 
 // Helper to check if current type needs OAuth flow
@@ -4154,6 +4186,16 @@ const buildAnthropicExtra = (base?: Record<string, unknown>): Record<string, unk
 
 // Helper function to create account with mixed channel warning handling
 const doCreateAccount = async (payload: CreateAccountRequest) => {
+  // 将 header_override 写入 extra 字段
+  const headerOverride = (form.header_override || '').trim()
+  if (headerOverride) {
+    const extra = (payload.extra || {}) as Record<string, unknown>
+    extra.header_override = headerOverride
+    payload = { ...payload, extra }
+  }
+  // 从 payload 中删除非 API 字段
+  delete (payload as any).header_override
+
   const canContinue = await ensureAntigravityMixedChannelConfirmed(async () => {
     await submitCreateAccount(payload)
   })
