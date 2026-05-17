@@ -2495,7 +2495,7 @@
           <button
             type="button"
             class="rounded border border-gray-200 px-2 py-0.5 text-xs text-gray-500 hover:bg-gray-50 dark:border-dark-600 dark:text-gray-400 dark:hover:bg-dark-700"
-            @click="form.header_override = '{\"*\": true}'"
+            @click="form.header_override = '{&quot;*&quot;: true}'"
           >{{ t('admin.accounts.headerOverrideWildcard', '填入透传模版') }}</button>
           <button
             type="button"
