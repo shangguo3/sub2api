@@ -51,6 +51,22 @@ func NewBedrockSignerFromAccount(account *Account) (*BedrockSigner, error) {
 	return NewBedrockSigner(accessKeyID, secretAccessKey, sessionToken, region), nil
 }
 
+// NewBedrockSignerFromAWSAccount 从 AWS 平台账号凭证创建 BedrockSigner
+func NewBedrockSignerFromAWSAccount(account *Account) (*BedrockSigner, error) {
+	accessKeyID := account.GetCredential("aws_access_key_id")
+	if accessKeyID == "" {
+		return nil, fmt.Errorf("aws_access_key_id not found in credentials")
+	}
+	secretAccessKey := account.GetCredential("aws_secret_access_key")
+	if secretAccessKey == "" {
+		return nil, fmt.Errorf("aws_secret_access_key not found in credentials")
+	}
+	region := account.GetAWSRegion()
+	sessionToken := account.GetCredential("aws_session_token")
+
+	return NewBedrockSigner(accessKeyID, secretAccessKey, sessionToken, region), nil
+}
+
 // SignRequest 对 HTTP 请求进行 SigV4 签名
 // 重要约束：调用此方法前，req 应只包含 AWS 相关的 header（如 Content-Type、Accept）。
 // 非 AWS header（如 anthropic-beta）会参与签名计算，如果 Bedrock 服务端不识别这些 header，

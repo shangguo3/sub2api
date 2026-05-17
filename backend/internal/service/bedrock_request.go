@@ -133,6 +133,48 @@ func normalizeBedrockModelID(modelID string) (normalized string, shouldAdjustReg
 	return "", false, false
 }
 
+func normalizeAWSBedrockModelID(modelID string) (normalized string, shouldAdjustRegion bool, ok bool) {
+	modelID = strings.TrimSpace(modelID)
+	if modelID == "" {
+		return "", false, false
+	}
+	if mapped, exists := domain.DefaultAWSBedrockModelMapping[modelID]; exists {
+		return mapped, true, true
+	}
+	if mapped, exists := domain.DefaultBedrockModelMapping[modelID]; exists {
+		return mapped, true, true
+	}
+	if isRegionalBedrockModelID(modelID) {
+		return modelID, true, true
+	}
+	if isLikelyBedrockModelID(modelID) {
+		return modelID, false, true
+	}
+	return "", false, false
+}
+
+// ResolveAWSBedrockModelID resolves a requested model into a Bedrock model ID for the AWS platform.
+// Supports both Claude models and other Bedrock models (Llama, Mistral, Titan, etc.).
+func ResolveAWSBedrockModelID(account *Account, requestedModel string) (string, bool) {
+	if account == nil {
+		return "", false
+	}
+
+	mappedModel := account.GetMappedModel(requestedModel)
+	modelID, shouldAdjustRegion, ok := normalizeAWSBedrockModelID(mappedModel)
+	if !ok {
+		return "", false
+	}
+	if shouldAdjustRegion {
+		targetRegion := bedrockRuntimeRegion(account)
+		if shouldForceBedrockGlobal(account) {
+			targetRegion = "global"
+		}
+		modelID = AdjustBedrockModelRegionPrefix(modelID, targetRegion)
+	}
+	return modelID, true
+}
+
 // ResolveBedrockModelID resolves a requested Claude model into a Bedrock model ID.
 // It applies account model_mapping first, then default Bedrock aliases, and finally
 // adjusts Anthropic cross-region prefixes to match the account region.

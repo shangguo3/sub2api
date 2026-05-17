@@ -3525,6 +3525,9 @@ export default {
       bedrockApiKeyInput: 'API Key',
       bedrockApiKeyRequired: '请输入 Bedrock API Key',
       bedrockApiKeyLeaveEmpty: '留空以保持当前密钥',
+      awsExternalIdHint: '可选，当角色信任策略要求外部 ID 时使用',
+      awsSourceKeyHint: '可选，用于调用 AssumeRole 的源 IAM 凭证。为空时使用默认凭证链',
+      awsSSOHint: '创建账号后，系统将自动使用 SSO 凭证获取临时 AWS 凭证用于 Bedrock API 调用。凭证会在过期前自动刷新。',
       apiKeyIsRequired: 'API Key 是必需的',
       leaveEmptyToKeep: '留空以保持当前密钥',
       // Upstream type

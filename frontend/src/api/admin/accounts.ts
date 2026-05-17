@@ -637,6 +637,55 @@ export async function setPrivacy(id: number): Promise<Account> {
   return data
 }
 
+/**
+ * Get AWS default model mapping from backend
+ */
+export async function getAWSDefaultModelMapping(): Promise<Record<string, string>> {
+  const { data } = await apiClient.get<Record<string, string>>(
+    '/admin/accounts/aws/default-model-mapping'
+  )
+  return data
+}
+
+/**
+ * Start AWS SSO device authorization flow
+ */
+export async function generateAWSSSODeviceAuth(params: {
+  sso_start_url: string
+  sso_region: string
+}): Promise<{
+  verification_uri: string
+  user_code: string
+  device_code: string
+  client_id: string
+  client_secret: string
+  expires_in: number
+}> {
+  const { data } = await apiClient.post('/admin/aws/sso/start-device-auth', params)
+  return data
+}
+
+/**
+ * Poll for AWS SSO token
+ */
+export async function pollAWSSSOToken(params: {
+  device_code: string
+  client_id: string
+  client_secret: string
+  sso_region: string
+  sso_account_id: string
+  sso_role_name: string
+}): Promise<{
+  access_token: string
+  aws_access_key_id: string
+  aws_secret_access_key: string
+  aws_session_token: string
+  credentials_expire_at: string
+}> {
+  const { data } = await apiClient.post('/admin/aws/sso/poll-token', params)
+  return data
+}
+
 export const accountsAPI = {
   list,
   listWithEtag,
@@ -672,6 +721,9 @@ export const accountsAPI = {
   importData,
   importCodexSession,
   getAntigravityDefaultModelMapping,
+  getAWSDefaultModelMapping,
+  generateAWSSSODeviceAuth,
+  pollAWSSSOToken,
   batchClearError,
   batchRefresh,
   setPrivacy

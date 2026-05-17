@@ -41,6 +41,9 @@ func RegisterAdminRoutes(
 		// Antigravity OAuth
 		registerAntigravityOAuthRoutes(admin, h)
 
+		// AWS SSO OAuth
+		registerAWSRoutes(admin, h)
+
 		// 代理管理
 		registerProxyRoutes(admin, h)
 
@@ -315,6 +318,9 @@ func registerAccountRoutes(admin *gin.RouterGroup, h *handler.Handlers) {
 		// Antigravity 默认模型映射
 		accounts.GET("/antigravity/default-model-mapping", h.Admin.Account.GetAntigravityDefaultModelMapping)
 
+		// AWS 默认模型映射
+		accounts.GET("/aws/default-model-mapping", h.Admin.Account.GetAWSDefaultModelMapping)
+
 		// Claude OAuth routes
 		accounts.POST("/generate-auth-url", h.Admin.OAuth.GenerateAuthURL)
 		accounts.POST("/generate-setup-token-url", h.Admin.OAuth.GenerateSetupTokenURL)
@@ -363,6 +369,14 @@ func registerAntigravityOAuthRoutes(admin *gin.RouterGroup, h *handler.Handlers)
 		antigravity.POST("/oauth/auth-url", h.Admin.AntigravityOAuth.GenerateAuthURL)
 		antigravity.POST("/oauth/exchange-code", h.Admin.AntigravityOAuth.ExchangeCode)
 		antigravity.POST("/oauth/refresh-token", h.Admin.AntigravityOAuth.RefreshToken)
+	}
+}
+
+func registerAWSRoutes(admin *gin.RouterGroup, h *handler.Handlers) {
+	aws := admin.Group("/aws")
+	{
+		aws.POST("/sso/start-device-auth", h.Admin.AWSSSOOAuth.StartDeviceAuth)
+		aws.POST("/sso/poll-token", h.Admin.AWSSSOOAuth.PollForToken)
 	}
 }
 

@@ -147,6 +147,19 @@
             <Icon name="cloud" size="sm" />
             Antigravity
           </button>
+          <button
+            type="button"
+            @click="form.platform = 'aws'"
+            :class="[
+              'flex flex-1 items-center justify-center gap-2 rounded-md px-4 py-2.5 text-sm font-medium transition-all',
+              form.platform === 'aws'
+                ? 'bg-white text-amber-600 shadow-sm dark:bg-dark-600 dark:text-amber-400'
+                : 'text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-200'
+            ]"
+          >
+            <Icon name="cloud" size="sm" />
+            AWS
+          </button>
         </div>
       </div>
 
@@ -771,6 +784,365 @@
               <span class="text-xs text-gray-500 dark:text-gray-400">{{ t('admin.accounts.types.antigravityApikey') }}</span>
             </div>
           </button>
+        </div>
+      </div>
+
+      <!-- Account Type Selection (AWS) -->
+      <div v-if="form.platform === 'aws'">
+        <label class="input-label">{{ t('admin.accounts.accountType') }}</label>
+        <div class="mt-2 grid grid-cols-3 gap-3">
+          <button
+            type="button"
+            @click="awsAccountType = 'bedrock'"
+            :class="[
+              'flex items-center gap-3 rounded-lg border-2 p-3 text-left transition-all',
+              awsAccountType === 'bedrock'
+                ? 'border-amber-500 bg-amber-50 dark:bg-amber-900/20'
+                : 'border-gray-200 hover:border-amber-300 dark:border-dark-600 dark:hover:border-amber-700'
+            ]"
+          >
+            <div
+              :class="[
+                'flex h-8 w-8 shrink-0 items-center justify-center rounded-lg',
+                awsAccountType === 'bedrock'
+                  ? 'bg-amber-500 text-white'
+                  : 'bg-gray-100 text-gray-500 dark:bg-dark-600 dark:text-gray-400'
+              ]"
+            >
+              <Icon name="key" size="sm" />
+            </div>
+            <div>
+              <span class="block text-sm font-medium text-gray-900 dark:text-white">IAM Access Key</span>
+              <span class="text-xs text-gray-500 dark:text-gray-400">SigV4</span>
+            </div>
+          </button>
+
+          <button
+            type="button"
+            @click="awsAccountType = 'iam_role'"
+            :class="[
+              'flex items-center gap-3 rounded-lg border-2 p-3 text-left transition-all',
+              awsAccountType === 'iam_role'
+                ? 'border-amber-500 bg-amber-50 dark:bg-amber-900/20'
+                : 'border-gray-200 hover:border-amber-300 dark:border-dark-600 dark:hover:border-amber-700'
+            ]"
+          >
+            <div
+              :class="[
+                'flex h-8 w-8 shrink-0 items-center justify-center rounded-lg',
+                awsAccountType === 'iam_role'
+                  ? 'bg-amber-500 text-white'
+                  : 'bg-gray-100 text-gray-500 dark:bg-dark-600 dark:text-gray-400'
+              ]"
+            >
+              <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75m-3-7.036A11.959 11.959 0 013.598 6 11.99 11.99 0 003 9.749c0 5.592 3.824 10.29 9 11.623 5.176-1.332 9-6.03 9-11.622 0-1.31-.21-2.571-.598-3.751h-.152c-3.196 0-6.1-1.248-8.25-3.285z" />
+              </svg>
+            </div>
+            <div>
+              <span class="block text-sm font-medium text-gray-900 dark:text-white">IAM Role/STS</span>
+              <span class="text-xs text-gray-500 dark:text-gray-400">AssumeRole</span>
+            </div>
+          </button>
+
+          <button
+            type="button"
+            @click="awsAccountType = 'aws_sso'"
+            :class="[
+              'flex items-center gap-3 rounded-lg border-2 p-3 text-left transition-all',
+              awsAccountType === 'aws_sso'
+                ? 'border-amber-500 bg-amber-50 dark:bg-amber-900/20'
+                : 'border-gray-200 hover:border-amber-300 dark:border-dark-600 dark:hover:border-amber-700'
+            ]"
+          >
+            <div
+              :class="[
+                'flex h-8 w-8 shrink-0 items-center justify-center rounded-lg',
+                awsAccountType === 'aws_sso'
+                  ? 'bg-amber-500 text-white'
+                  : 'bg-gray-100 text-gray-500 dark:bg-dark-600 dark:text-gray-400'
+              ]"
+            >
+              <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M12 21a9.004 9.004 0 008.716-6.747M12 21a9.004 9.004 0 01-8.716-6.747M12 21c2.485 0 4.5-4.03 4.5-9S14.485 3 12 3m0 18c-2.485 0-4.5-4.03-4.5-9S9.515 3 12 3m0 0a8.997 8.997 0 017.843 4.582M12 3a8.997 8.997 0 00-7.843 4.582m15.686 0A11.953 11.953 0 0112 10.5c-2.998 0-5.74-1.1-7.843-2.918m15.686 0A8.959 8.959 0 0121 12c0 .778-.099 1.533-.284 2.253m0 0A17.919 17.919 0 0112 16.5c-3.162 0-6.133-.815-8.716-2.247m0 0A9.015 9.015 0 013 12c0-1.605.42-3.113 1.157-4.418" />
+              </svg>
+            </div>
+            <div>
+              <span class="block text-sm font-medium text-gray-900 dark:text-white">AWS SSO</span>
+              <span class="text-xs text-gray-500 dark:text-gray-400">Identity Center</span>
+            </div>
+          </button>
+        </div>
+      </div>
+
+      <!-- AWS IAM Access Key fields -->
+      <div v-if="form.platform === 'aws' && awsAccountType === 'bedrock'" class="space-y-4">
+        <div>
+          <label class="input-label">AWS Access Key ID</label>
+          <input
+            v-model="awsAccessKeyId"
+            type="text"
+            required
+            class="input font-mono"
+            placeholder="AKIA..."
+          />
+        </div>
+        <div>
+          <label class="input-label">AWS Secret Access Key</label>
+          <input
+            v-model="awsSecretAccessKey"
+            type="password"
+            required
+            class="input font-mono"
+          />
+        </div>
+        <div>
+          <label class="input-label">Session Token</label>
+          <input
+            v-model="awsSessionToken"
+            type="password"
+            class="input font-mono"
+          />
+          <p class="input-hint">{{ t('admin.accounts.bedrockSessionTokenHint') }}</p>
+        </div>
+        <div>
+          <label class="input-label">AWS Region</label>
+          <select v-model="awsRegion" class="input">
+            <optgroup label="US">
+              <option value="us-east-1">us-east-1 (N. Virginia)</option>
+              <option value="us-east-2">us-east-2 (Ohio)</option>
+              <option value="us-west-2">us-west-2 (Oregon)</option>
+            </optgroup>
+            <optgroup label="Europe">
+              <option value="eu-west-1">eu-west-1 (Ireland)</option>
+              <option value="eu-west-2">eu-west-2 (London)</option>
+              <option value="eu-west-3">eu-west-3 (Paris)</option>
+              <option value="eu-central-1">eu-central-1 (Frankfurt)</option>
+            </optgroup>
+            <optgroup label="Asia Pacific">
+              <option value="ap-northeast-1">ap-northeast-1 (Tokyo)</option>
+              <option value="ap-northeast-2">ap-northeast-2 (Seoul)</option>
+              <option value="ap-south-1">ap-south-1 (Mumbai)</option>
+              <option value="ap-southeast-1">ap-southeast-1 (Singapore)</option>
+              <option value="ap-southeast-2">ap-southeast-2 (Sydney)</option>
+            </optgroup>
+            <optgroup label="Other">
+              <option value="ca-central-1">ca-central-1 (Canada)</option>
+              <option value="sa-east-1">sa-east-1 (Sao Paulo)</option>
+            </optgroup>
+          </select>
+        </div>
+      </div>
+
+      <!-- AWS IAM Role/STS fields -->
+      <div v-if="form.platform === 'aws' && awsAccountType === 'iam_role'" class="space-y-4">
+        <div>
+          <label class="input-label">Role ARN</label>
+          <input
+            v-model="awsRoleArn"
+            type="text"
+            required
+            class="input font-mono"
+            placeholder="arn:aws:iam::123456789012:role/BedrockRole"
+          />
+        </div>
+        <div>
+          <label class="input-label">External ID</label>
+          <input
+            v-model="awsExternalId"
+            type="text"
+            class="input font-mono"
+          />
+          <p class="input-hint">{{ t('admin.accounts.awsExternalIdHint') }}</p>
+        </div>
+        <div>
+          <label class="input-label">Source Access Key ID</label>
+          <input
+            v-model="awsSourceAccessKeyId"
+            type="text"
+            class="input font-mono"
+            placeholder="AKIA..."
+          />
+          <p class="input-hint">{{ t('admin.accounts.awsSourceKeyHint') }}</p>
+        </div>
+        <div v-if="awsSourceAccessKeyId">
+          <label class="input-label">Source Secret Access Key</label>
+          <input
+            v-model="awsSourceSecretAccessKey"
+            type="password"
+            class="input font-mono"
+          />
+        </div>
+        <div>
+          <label class="input-label">Session Name</label>
+          <input
+            v-model="awsSessionName"
+            type="text"
+            class="input font-mono"
+            placeholder="sub2api-session"
+          />
+        </div>
+        <div>
+          <label class="input-label">AWS Region</label>
+          <select v-model="awsRegion" class="input">
+            <optgroup label="US">
+              <option value="us-east-1">us-east-1 (N. Virginia)</option>
+              <option value="us-east-2">us-east-2 (Ohio)</option>
+              <option value="us-west-2">us-west-2 (Oregon)</option>
+            </optgroup>
+            <optgroup label="Europe">
+              <option value="eu-west-1">eu-west-1 (Ireland)</option>
+              <option value="eu-west-2">eu-west-2 (London)</option>
+              <option value="eu-west-3">eu-west-3 (Paris)</option>
+              <option value="eu-central-1">eu-central-1 (Frankfurt)</option>
+            </optgroup>
+            <optgroup label="Asia Pacific">
+              <option value="ap-northeast-1">ap-northeast-1 (Tokyo)</option>
+              <option value="ap-northeast-2">ap-northeast-2 (Seoul)</option>
+              <option value="ap-south-1">ap-south-1 (Mumbai)</option>
+              <option value="ap-southeast-1">ap-southeast-1 (Singapore)</option>
+              <option value="ap-southeast-2">ap-southeast-2 (Sydney)</option>
+            </optgroup>
+            <optgroup label="Other">
+              <option value="ca-central-1">ca-central-1 (Canada)</option>
+              <option value="sa-east-1">sa-east-1 (Sao Paulo)</option>
+            </optgroup>
+          </select>
+        </div>
+      </div>
+
+      <!-- AWS SSO fields -->
+      <div v-if="form.platform === 'aws' && awsAccountType === 'aws_sso'" class="space-y-4">
+        <div>
+          <label class="input-label">SSO Start URL</label>
+          <input
+            v-model="awsSSOStartUrl"
+            type="text"
+            required
+            class="input font-mono"
+            placeholder="https://my-sso.awsapps.com/start"
+          />
+        </div>
+        <div>
+          <label class="input-label">SSO Region</label>
+          <input
+            v-model="awsSSORegion"
+            type="text"
+            required
+            class="input font-mono"
+            placeholder="us-east-1"
+          />
+        </div>
+        <div>
+          <label class="input-label">SSO Account ID</label>
+          <input
+            v-model="awsSSOAccountId"
+            type="text"
+            required
+            class="input font-mono"
+            placeholder="123456789012"
+          />
+        </div>
+        <div>
+          <label class="input-label">SSO Role Name</label>
+          <input
+            v-model="awsSSORole"
+            type="text"
+            required
+            class="input font-mono"
+            placeholder="BedrockAccess"
+          />
+        </div>
+        <div>
+          <label class="input-label">Bedrock Region</label>
+          <select v-model="awsRegion" class="input">
+            <optgroup label="US">
+              <option value="us-east-1">us-east-1 (N. Virginia)</option>
+              <option value="us-east-2">us-east-2 (Ohio)</option>
+              <option value="us-west-2">us-west-2 (Oregon)</option>
+            </optgroup>
+            <optgroup label="Europe">
+              <option value="eu-west-1">eu-west-1 (Ireland)</option>
+              <option value="eu-west-2">eu-west-2 (London)</option>
+              <option value="eu-central-1">eu-central-1 (Frankfurt)</option>
+            </optgroup>
+            <optgroup label="Asia Pacific">
+              <option value="ap-northeast-1">ap-northeast-1 (Tokyo)</option>
+              <option value="ap-southeast-1">ap-southeast-1 (Singapore)</option>
+              <option value="ap-southeast-2">ap-southeast-2 (Sydney)</option>
+            </optgroup>
+          </select>
+        </div>
+        <div
+          class="mt-3 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-800 dark:border-amber-800/40 dark:bg-amber-900/20 dark:text-amber-200"
+        >
+          <p>{{ t('admin.accounts.awsSSOHint') }}</p>
+        </div>
+      </div>
+
+      <!-- AWS Model Restriction -->
+      <div v-if="form.platform === 'aws'" class="space-y-4">
+        <div class="border-t border-gray-200 pt-4 dark:border-dark-600">
+          <label class="input-label">{{ t('admin.accounts.modelRestriction') }}</label>
+          <div class="mb-4 flex gap-2">
+            <button
+              type="button"
+              @click="awsModelRestrictionMode = 'whitelist'"
+              :class="[
+                'flex-1 rounded-lg px-4 py-2 text-sm font-medium transition-all',
+                awsModelRestrictionMode === 'whitelist'
+                  ? 'bg-primary-100 text-primary-700 dark:bg-primary-900/30 dark:text-primary-400'
+                  : 'bg-gray-100 text-gray-600 hover:bg-gray-200 dark:bg-dark-600 dark:text-gray-400 dark:hover:bg-dark-500'
+              ]"
+            >
+              {{ t('admin.accounts.modelWhitelist') }}
+            </button>
+            <button
+              type="button"
+              @click="awsModelRestrictionMode = 'mapping'"
+              :class="[
+                'flex-1 rounded-lg px-4 py-2 text-sm font-medium transition-all',
+                awsModelRestrictionMode === 'mapping'
+                  ? 'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400'
+                  : 'bg-gray-100 text-gray-600 hover:bg-gray-200 dark:bg-dark-600 dark:text-gray-400 dark:hover:bg-dark-500'
+              ]"
+            >
+              {{ t('admin.accounts.modelMapping') }}
+            </button>
+          </div>
+
+          <div v-if="awsModelRestrictionMode === 'whitelist'">
+            <ModelWhitelistSelector v-model="awsWhitelistModels" platform="aws" />
+            <p class="text-xs text-gray-500 dark:text-gray-400">
+              {{ t('admin.accounts.selectedModels', { count: awsWhitelistModels.length }) }}
+              <span v-if="awsWhitelistModels.length === 0">{{ t('admin.accounts.supportsAllModels') }}</span>
+            </p>
+          </div>
+
+          <div v-else class="space-y-3">
+            <div v-for="(mapping, index) in awsModelMappings" :key="getAWSModelMappingKey(mapping)" class="flex items-center gap-2">
+              <input v-model="mapping.from" type="text" class="input flex-1" :placeholder="t('admin.accounts.fromModel')" />
+              <span class="text-gray-400">→</span>
+              <input v-model="mapping.to" type="text" class="input flex-1" :placeholder="t('admin.accounts.toModel')" />
+              <button type="button" @click="removeAWSModelMapping(index)" class="text-red-500 hover:text-red-700">
+                <Icon name="trash" size="sm" />
+              </button>
+            </div>
+            <button type="button" @click="addAWSModelMapping()" class="btn btn-secondary text-sm">
+              + {{ t('admin.accounts.addMapping') }}
+            </button>
+            <div class="flex flex-wrap gap-2">
+              <button
+                v-for="preset in awsPresets"
+                :key="preset.from"
+                type="button"
+                @click="addAWSPresetMapping(preset.from, preset.to)"
+                :class="['rounded-lg px-3 py-1 text-xs transition-colors', preset.color]"
+              >
+                + {{ preset.label }}
+              </button>
+            </div>
+          </div>
         </div>
       </div>
 
@@ -3354,6 +3726,27 @@ const vertexProjectId = ref('')
 const vertexClientEmail = ref('')
 const vertexLocation = ref('global')
 const vertexServiceAccountDragActive = ref(false)
+// AWS credentials
+const awsAccountType = ref<'bedrock' | 'iam_role' | 'aws_sso'>('bedrock')
+const awsAccessKeyId = ref('')
+const awsSecretAccessKey = ref('')
+const awsSessionToken = ref('')
+const awsRegion = ref('us-east-1')
+const awsRoleArn = ref('')
+const awsExternalId = ref('')
+const awsSourceAccessKeyId = ref('')
+const awsSourceSecretAccessKey = ref('')
+const awsSessionName = ref('sub2api-session')
+const awsSSOStartUrl = ref('')
+const awsSSORegion = ref('us-east-1')
+const awsSSOAccountId = ref('')
+const awsSSORole = ref('')
+const awsModelMappings = ref<ModelMapping[]>([])
+const awsModelRestrictionMode = ref<'whitelist' | 'mapping'>('mapping')
+const awsWhitelistModels = ref<string[]>([])
+const awsPresets = computed(() => getPresetMappingsByPlatform('aws'))
+const getAWSModelMappingKey = createStableObjectKeyResolver<ModelMapping>('create-aws-model-mapping')
+
 const tempUnschedEnabled = ref(false)
 const tempUnschedRules = ref<TempUnschedRuleForm[]>([])
 const getModelMappingKey = createStableObjectKeyResolver<ModelMapping>('create-model-mapping')
@@ -3542,6 +3935,10 @@ const isOAuthFlow = computed(() => {
   if (form.platform === 'anthropic' && accountCategory.value === 'bedrock') {
     return false
   }
+  // AWS 平台不需要 OAuth 流程（所有类型直接创建）
+  if (form.platform === 'aws') {
+    return false
+  }
   return accountCategory.value === 'oauth-based'
 })
 
@@ -3601,7 +3998,7 @@ watch(
 
 // Sync form.type based on accountCategory, addMethod, and platform-specific type
 watch(
-  [accountCategory, addMethod, antigravityAccountType, () => form.platform],
+  [accountCategory, addMethod, antigravityAccountType, awsAccountType, () => form.platform],
   ([category, method, agType]) => {
     // Antigravity upstream 类型（实际创建为 apikey）
     if (form.platform === 'antigravity' && agType === 'upstream') {
@@ -3611,6 +4008,11 @@ watch(
     // Bedrock 类型
     if (form.platform === 'anthropic' && category === 'bedrock') {
       form.type = 'bedrock' as AccountType
+      return
+    }
+    // AWS 平台类型映射
+    if (form.platform === 'aws') {
+      form.type = awsAccountType.value as AccountType
       return
     }
     if ((form.platform === 'gemini' || form.platform === 'anthropic') && category === 'service_account') {
@@ -3659,6 +4061,24 @@ watch(
     if (newPlatform !== 'anthropic' && accountCategory.value === 'bedrock') {
       accountCategory.value = 'oauth-based'
     }
+    // Reset AWS fields when switching platforms
+    awsAccountType.value = 'bedrock'
+    awsAccessKeyId.value = ''
+    awsSecretAccessKey.value = ''
+    awsSessionToken.value = ''
+    awsRegion.value = 'us-east-1'
+    awsRoleArn.value = ''
+    awsExternalId.value = ''
+    awsSourceAccessKeyId.value = ''
+    awsSourceSecretAccessKey.value = ''
+    awsSessionName.value = 'sub2api-session'
+    awsSSOStartUrl.value = ''
+    awsSSORegion.value = 'us-east-1'
+    awsSSOAccountId.value = ''
+    awsSSORole.value = ''
+    awsModelMappings.value = []
+    awsWhitelistModels.value = []
+    awsModelRestrictionMode.value = 'mapping'
     // Reset Bedrock fields when switching platforms
     bedrockAccessKeyId.value = ''
     bedrockSecretAccessKey.value = ''
@@ -3782,6 +4202,22 @@ const addAntigravityModelMapping = () => {
 
 const removeAntigravityModelMapping = (index: number) => {
   antigravityModelMappings.value.splice(index, 1)
+}
+
+const addAWSPresetMapping = (from: string, to: string) => {
+  if (awsModelMappings.value.some((m) => m.from === from)) {
+    appStore.showInfo(t('admin.accounts.mappingExists', { model: from }))
+    return
+  }
+  awsModelMappings.value.push({ from, to })
+}
+
+const addAWSModelMapping = () => {
+  awsModelMappings.value.push({ from: '', to: '' })
+}
+
+const removeAWSModelMapping = (index: number) => {
+  awsModelMappings.value.splice(index, 1)
 }
 
 const addAntigravityPresetMapping = (from: string, to: string) => {
@@ -4102,6 +4538,23 @@ const resetForm = () => {
   antigravityAccountType.value = 'oauth'
   upstreamBaseUrl.value = ''
   upstreamApiKey.value = ''
+  awsAccountType.value = 'bedrock'
+  awsAccessKeyId.value = ''
+  awsSecretAccessKey.value = ''
+  awsSessionToken.value = ''
+  awsRegion.value = 'us-east-1'
+  awsRoleArn.value = ''
+  awsExternalId.value = ''
+  awsSourceAccessKeyId.value = ''
+  awsSourceSecretAccessKey.value = ''
+  awsSessionName.value = 'sub2api-session'
+  awsSSOStartUrl.value = ''
+  awsSSORegion.value = 'us-east-1'
+  awsSSOAccountId.value = ''
+  awsSSORole.value = ''
+  awsModelMappings.value = []
+  awsWhitelistModels.value = []
+  awsModelRestrictionMode.value = 'mapping'
   vertexServiceAccountJson.value = ''
   vertexProjectId.value = ''
   vertexClientEmail.value = ''
@@ -4360,6 +4813,83 @@ const handleSubmit = async () => {
     return
   }
 
+  // For AWS platform, create directly
+  if (form.platform === 'aws') {
+    if (!form.name.trim()) {
+      appStore.showError(t('admin.accounts.pleaseEnterAccountName'))
+      return
+    }
+
+    const credentials: Record<string, unknown> = {
+      auth_mode: 'sigv4',
+      aws_region: awsRegion.value.trim() || 'us-east-1',
+    }
+
+    if (awsAccountType.value === 'bedrock') {
+      if (!awsAccessKeyId.value.trim()) {
+        appStore.showError(t('admin.accounts.bedrockAccessKeyIdRequired'))
+        return
+      }
+      if (!awsSecretAccessKey.value.trim()) {
+        appStore.showError(t('admin.accounts.bedrockSecretAccessKeyRequired'))
+        return
+      }
+      credentials.aws_access_key_id = awsAccessKeyId.value.trim()
+      credentials.aws_secret_access_key = awsSecretAccessKey.value.trim()
+      if (awsSessionToken.value.trim()) {
+        credentials.aws_session_token = awsSessionToken.value.trim()
+      }
+    } else if (awsAccountType.value === 'iam_role') {
+      if (!awsRoleArn.value.trim()) {
+        appStore.showError('Please enter Role ARN')
+        return
+      }
+      credentials.role_arn = awsRoleArn.value.trim()
+      if (awsExternalId.value.trim()) {
+        credentials.external_id = awsExternalId.value.trim()
+      }
+      if (awsSourceAccessKeyId.value.trim()) {
+        credentials.source_access_key_id = awsSourceAccessKeyId.value.trim()
+        credentials.source_secret_access_key = awsSourceSecretAccessKey.value.trim()
+      }
+      credentials.session_name = awsSessionName.value.trim() || 'sub2api-session'
+    } else if (awsAccountType.value === 'aws_sso') {
+      if (!awsSSOStartUrl.value.trim()) {
+        appStore.showError('Please enter SSO Start URL')
+        return
+      }
+      if (!awsSSOAccountId.value.trim()) {
+        appStore.showError('Please enter SSO Account ID')
+        return
+      }
+      if (!awsSSORole.value.trim()) {
+        appStore.showError('Please enter SSO Role Name')
+        return
+      }
+      credentials.sso_start_url = awsSSOStartUrl.value.trim()
+      credentials.sso_region = awsSSORegion.value.trim() || 'us-east-1'
+      credentials.sso_account_id = awsSSOAccountId.value.trim()
+      credentials.sso_role_name = awsSSORole.value.trim()
+    }
+
+    const modelMapping = buildModelMappingObject(
+      awsModelRestrictionMode.value, awsWhitelistModels.value, awsModelMappings.value
+    )
+    if (modelMapping) {
+      credentials.model_mapping = modelMapping
+    }
+
+    if (poolModeEnabled.value) {
+      credentials.pool_mode = true
+      credentials.pool_mode_retry_count = normalizePoolModeRetryCount(poolModeRetryCount.value)
+    }
+
+    applyInterceptWarmup(credentials, interceptWarmupRequests.value, 'create')
+
+    await createAccountAndFinish('aws', awsAccountType.value as AccountType, credentials)
+    return
+  }
+
   // For Antigravity upstream type, create directly
   if (form.platform === 'antigravity' && antigravityAccountType.value === 'upstream') {
     if (!form.name.trim()) {
@@ -4539,7 +5069,7 @@ const createAccountAndFinish = async (
   }
   // Inject quota limits for apikey/bedrock accounts
   let finalExtra = extra
-  if (type === 'apikey' || type === 'bedrock') {
+  if (type === 'apikey' || type === 'bedrock' || type === 'iam_role' || type === 'aws_sso') {
     const quotaExtra: Record<string, unknown> = { ...(extra || {}) }
     if (editQuotaLimit.value != null && editQuotaLimit.value > 0) {
       quotaExtra.quota_limit = editQuotaLimit.value

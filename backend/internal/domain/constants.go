@@ -22,6 +22,7 @@ const (
 	PlatformOpenAI      = "openai"
 	PlatformGemini      = "gemini"
 	PlatformAntigravity = "antigravity"
+	PlatformAWS         = "aws"
 )
 
 // Account type constants
@@ -32,6 +33,8 @@ const (
 	AccountTypeUpstream       = "upstream"        // 上游透传类型账号（通过 Base URL + API Key 连接上游）
 	AccountTypeBedrock        = "bedrock"         // AWS Bedrock 类型账号（通过 SigV4 签名或 API Key 连接 Bedrock，由 credentials.auth_mode 区分）
 	AccountTypeServiceAccount = "service_account" // Google Service Account 类型账号（用于 Vertex AI）
+	AccountTypeIAMRole        = "iam_role"        // AWS IAM Role/STS 类型账号（通过 AssumeRole 获取临时凭证）
+	AccountTypeAWSSSO         = "aws_sso"         // AWS SSO 类型账号（通过 AWS Identity Center OAuth 认证）
 )
 
 // Redeem type constants
@@ -139,4 +142,37 @@ var DefaultBedrockModelMapping = map[string]string{
 	// Claude Haiku
 	"claude-haiku-4-5":          "us.anthropic.claude-haiku-4-5-20251001-v1:0",
 	"claude-haiku-4-5-20251001": "us.anthropic.claude-haiku-4-5-20251001-v1:0",
+}
+
+// DefaultAWSBedrockModelMapping 是 AWS 独立平台的默认模型映射
+// 包含 Anthropic Claude 模型（与 DefaultBedrockModelMapping 一致）以及其他 Bedrock 支持的模型
+var DefaultAWSBedrockModelMapping = map[string]string{
+	// Claude Opus
+	"claude-opus-4-7":          "us.anthropic.claude-opus-4-7-v1",
+	"claude-opus-4-6-thinking": "us.anthropic.claude-opus-4-6-v1",
+	"claude-opus-4-6":          "us.anthropic.claude-opus-4-6-v1",
+	"claude-opus-4-5-thinking": "us.anthropic.claude-opus-4-5-20251101-v1:0",
+	"claude-opus-4-5-20251101": "us.anthropic.claude-opus-4-5-20251101-v1:0",
+	"claude-opus-4-1":          "us.anthropic.claude-opus-4-1-20250805-v1:0",
+	"claude-opus-4-20250514":   "us.anthropic.claude-opus-4-20250514-v1:0",
+	// Claude Sonnet
+	"claude-sonnet-4-6-thinking": "us.anthropic.claude-sonnet-4-6",
+	"claude-sonnet-4-6":          "us.anthropic.claude-sonnet-4-6",
+	"claude-sonnet-4-5":          "us.anthropic.claude-sonnet-4-5-20250929-v1:0",
+	"claude-sonnet-4-5-thinking": "us.anthropic.claude-sonnet-4-5-20250929-v1:0",
+	"claude-sonnet-4-5-20250929": "us.anthropic.claude-sonnet-4-5-20250929-v1:0",
+	"claude-sonnet-4-20250514":   "us.anthropic.claude-sonnet-4-20250514-v1:0",
+	// Claude Haiku
+	"claude-haiku-4-5":          "us.anthropic.claude-haiku-4-5-20251001-v1:0",
+	"claude-haiku-4-5-20251001": "us.anthropic.claude-haiku-4-5-20251001-v1:0",
+	// Meta Llama
+	"llama3-1-405b-instruct": "meta.llama3-1-405b-instruct-v1:0",
+	"llama3-1-70b-instruct":  "meta.llama3-1-70b-instruct-v1:0",
+	"llama3-1-8b-instruct":   "meta.llama3-1-8b-instruct-v1:0",
+	// Mistral
+	"mistral-large": "mistral.mistral-large-2407-v1:0",
+	"mistral-small": "mistral.mistral-small-2402-v1:0",
+	// Amazon Titan
+	"titan-text-premier": "amazon.titan-text-premier-v2:0",
+	"titan-text-express": "amazon.titan-text-express-v1",
 }

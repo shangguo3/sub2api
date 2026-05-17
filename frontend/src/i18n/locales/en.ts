@@ -3384,6 +3384,9 @@ export default {
       bedrockApiKeyInput: 'API Key',
       bedrockApiKeyRequired: 'Please enter Bedrock API Key',
       bedrockApiKeyLeaveEmpty: 'Leave empty to keep current key',
+      awsExternalIdHint: 'Optional, used when the role trust policy requires an external ID',
+      awsSourceKeyHint: 'Optional, source IAM credentials used to call AssumeRole. If empty, uses default credential chain',
+      awsSSOHint: 'After creating the account, the system will automatically use the SSO credentials to obtain temporary AWS credentials for Bedrock API calls. Credentials are refreshed automatically before expiry.',
       apiKeyIsRequired: 'API Key is required',
       leaveEmptyToKeep: 'Leave empty to keep current key',
       // Upstream type

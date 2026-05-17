@@ -974,7 +974,44 @@ func (a *Account) IsBedrockAPIKey() bool {
 
 // IsAPIKeyOrBedrock 返回账号类型是否支持配额和池模式等特性
 func (a *Account) IsAPIKeyOrBedrock() bool {
-	return a.Type == AccountTypeAPIKey || a.Type == AccountTypeBedrock
+	return a.Type == AccountTypeAPIKey || a.Type == AccountTypeBedrock || a.IsAWS()
+}
+
+func (a *Account) IsAWS() bool {
+	return a.Platform == PlatformAWS
+}
+
+func (a *Account) IsAWSIAMRole() bool {
+	return a.IsAWS() && a.Type == AccountTypeIAMRole
+}
+
+func (a *Account) IsAWSSSO() bool {
+	return a.IsAWS() && a.Type == AccountTypeAWSSSO
+}
+
+func (a *Account) GetAWSRegion() string {
+	if a.Credentials == nil {
+		return "us-east-1"
+	}
+	if region := a.GetCredential("aws_region"); region != "" {
+		return region
+	}
+	return "us-east-1"
+}
+
+func (a *Account) NeedsAWSCredentialRefresh() bool {
+	if !a.IsAWSIAMRole() && !a.IsAWSSSO() {
+		return false
+	}
+	expireStr := a.GetCredential("credentials_expire_at")
+	if expireStr == "" {
+		return true
+	}
+	expireAt, err := time.Parse(time.RFC3339, expireStr)
+	if err != nil {
+		return true
+	}
+	return time.Now().Add(5 * time.Minute).After(expireAt)
 }
 
 func (a *Account) IsOpenAI() bool {

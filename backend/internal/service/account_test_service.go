@@ -70,6 +70,7 @@ type AccountTestService struct {
 	httpUpstream              HTTPUpstream
 	cfg                       *config.Config
 	tlsFPProfileService       *TLSFingerprintProfileService
+	awsSTSService             *AWSSTSService
 }
 
 // NewAccountTestService creates a new AccountTestService
@@ -81,6 +82,7 @@ func NewAccountTestService(
 	httpUpstream HTTPUpstream,
 	cfg *config.Config,
 	tlsFPProfileService *TLSFingerprintProfileService,
+	awsSTSService *AWSSTSService,
 ) *AccountTestService {
 	return &AccountTestService{
 		accountRepo:               accountRepo,
@@ -90,6 +92,7 @@ func NewAccountTestService(
 		httpUpstream:              httpUpstream,
 		cfg:                       cfg,
 		tlsFPProfileService:       tlsFPProfileService,
+		awsSTSService:             awsSTSService,
 	}
 }
 
@@ -190,6 +193,10 @@ func (s *AccountTestService) TestAccountConnection(c *gin.Context, accountID int
 
 	if account.Platform == PlatformAntigravity {
 		return s.routeAntigravityTest(c, account, modelID, prompt)
+	}
+
+	if account.IsAWS() {
+		return s.testAWSBedrockAccountConnection(c, account, modelID)
 	}
 
 	return s.testClaudeAccountConnection(c, account, modelID)
@@ -469,6 +476,116 @@ func (s *AccountTestService) testBedrockAccountConnection(c *gin.Context, ctx co
 	}
 
 	// Bedrock non-streaming response is standard Claude JSON, extract the text
+	var result struct {
+		Content []struct {
+			Text string `json:"text"`
+		} `json:"content"`
+	}
+	if err := json.Unmarshal(body, &result); err != nil {
+		return s.sendErrorAndEnd(c, fmt.Sprintf("Failed to parse response: %s", err.Error()))
+	}
+
+	text := ""
+	if len(result.Content) > 0 {
+		text = result.Content[0].Text
+	}
+	if text == "" {
+		text = "(empty response)"
+	}
+
+	s.sendEvent(c, TestEvent{Type: "content", Text: text})
+	s.sendEvent(c, TestEvent{Type: "test_complete", Success: true})
+	return nil
+}
+
+// testAWSBedrockAccountConnection tests an AWS platform Bedrock account's connection
+func (s *AccountTestService) testAWSBedrockAccountConnection(c *gin.Context, account *Account, modelID string) error {
+	ctx := c.Request.Context()
+
+	testModelID := modelID
+	if testModelID == "" {
+		testModelID = "claude-sonnet-4-6"
+	}
+	testModelID = account.GetMappedModel(testModelID)
+
+	region := account.GetAWSRegion()
+	resolvedModelID, ok := ResolveAWSBedrockModelID(account, testModelID)
+	if !ok {
+		return s.sendErrorAndEnd(c, fmt.Sprintf("Unsupported AWS Bedrock model: %s", testModelID))
+	}
+	testModelID = resolvedModelID
+
+	c.Writer.Header().Set("Content-Type", "text/event-stream")
+	c.Writer.Header().Set("Cache-Control", "no-cache")
+	c.Writer.Header().Set("Connection", "keep-alive")
+	c.Writer.Header().Set("X-Accel-Buffering", "no")
+	c.Writer.Flush()
+
+	bedrockPayload := map[string]any{
+		"anthropic_version": "bedrock-2023-05-31",
+		"messages": []map[string]any{
+			{
+				"role": "user",
+				"content": []map[string]any{
+					{
+						"type": "text",
+						"text": "hi",
+					},
+				},
+			},
+		},
+		"max_tokens":  256,
+		"temperature": 1,
+	}
+	bedrockBody, _ := json.Marshal(bedrockPayload)
+
+	apiURL := BuildBedrockURL(region, testModelID, false)
+
+	s.sendEvent(c, TestEvent{Type: "test_start", Model: testModelID})
+
+	// Refresh credentials if needed (IAM Role/STS, AWS SSO)
+	if account.NeedsAWSCredentialRefresh() {
+		if s.awsSTSService != nil {
+			if err := s.awsSTSService.RefreshCredentials(ctx, account); err != nil {
+				return s.sendErrorAndEnd(c, fmt.Sprintf("Failed to refresh AWS credentials: %s", err.Error()))
+			}
+		} else {
+			return s.sendErrorAndEnd(c, "AWS credentials expired and no STS service configured")
+		}
+	}
+
+	signer, err := NewBedrockSignerFromAWSAccount(account)
+	if err != nil {
+		return s.sendErrorAndEnd(c, fmt.Sprintf("Failed to create AWS Bedrock signer: %s", err.Error()))
+	}
+
+	req, err := http.NewRequestWithContext(ctx, "POST", apiURL, bytes.NewReader(bedrockBody))
+	if err != nil {
+		return s.sendErrorAndEnd(c, "Failed to create request")
+	}
+	req.Header.Set("Content-Type", "application/json")
+
+	if err := signer.SignRequest(ctx, req, bedrockBody); err != nil {
+		return s.sendErrorAndEnd(c, fmt.Sprintf("Failed to sign request: %s", err.Error()))
+	}
+
+	proxyURL := ""
+	if account.ProxyID != nil && account.Proxy != nil {
+		proxyURL = account.Proxy.URL()
+	}
+
+	resp, err := s.httpUpstream.DoWithTLS(req, proxyURL, account.ID, account.Concurrency, nil)
+	if err != nil {
+		return s.sendErrorAndEnd(c, fmt.Sprintf("Request failed: %s", err.Error()))
+	}
+	defer func() { _ = resp.Body.Close() }()
+
+	body, _ := io.ReadAll(resp.Body)
+
+	if resp.StatusCode != http.StatusOK {
+		return s.sendErrorAndEnd(c, fmt.Sprintf("API returned %d: %s", resp.StatusCode, string(body)))
+	}
+
 	var result struct {
 		Content []struct {
 			Text string `json:"text"`

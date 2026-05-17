@@ -76,6 +76,24 @@ const antigravityModels = [
   'tab_flash_lite_preview'
 ]
 
+// AWS Bedrock (Claude + Llama + Mistral + Titan)
+const awsBedrockModels = [
+  // Claude models
+  'claude-opus-4-7', 'claude-opus-4-6', 'claude-opus-4-6-thinking',
+  'claude-opus-4-5-thinking', 'claude-opus-4-5-20251101',
+  'claude-opus-4-1', 'claude-opus-4-20250514',
+  'claude-sonnet-4-6', 'claude-sonnet-4-6-thinking',
+  'claude-sonnet-4-5', 'claude-sonnet-4-5-thinking', 'claude-sonnet-4-5-20250929',
+  'claude-sonnet-4-20250514',
+  'claude-haiku-4-5', 'claude-haiku-4-5-20251001',
+  // Meta Llama
+  'llama3-1-405b-instruct', 'llama3-1-70b-instruct', 'llama3-1-8b-instruct',
+  // Mistral
+  'mistral-large', 'mistral-small',
+  // Amazon Titan
+  'titan-text-premier', 'titan-text-express'
+]
+
 // 智谱 GLM
 const zhipuModels = [
   'glm-4', 'glm-4v', 'glm-4-plus', 'glm-4-0520',
@@ -308,6 +326,19 @@ const bedrockPresetMappings = [
   { label: 'Haiku 4.5', from: 'claude-haiku-4-5', to: 'us.anthropic.claude-haiku-4-5-20251001-v1:0', color: 'bg-green-100 text-green-700 hover:bg-green-200 dark:bg-green-900/30 dark:text-green-400' },
 ]
 
+// AWS Bedrock 预设映射（与后端 DefaultAWSBedrockModelMapping 保持一致）
+const awsBedrockPresetMappings = [
+  { label: 'Opus 4.7', from: 'claude-opus-4-7', to: 'us.anthropic.claude-opus-4-7-v1', color: 'bg-pink-100 text-pink-700 hover:bg-pink-200 dark:bg-pink-900/30 dark:text-pink-400' },
+  { label: 'Opus 4.6', from: 'claude-opus-4-6', to: 'us.anthropic.claude-opus-4-6-v1', color: 'bg-pink-100 text-pink-700 hover:bg-pink-200 dark:bg-pink-900/30 dark:text-pink-400' },
+  { label: 'Sonnet 4.6', from: 'claude-sonnet-4-6', to: 'us.anthropic.claude-sonnet-4-6', color: 'bg-cyan-100 text-cyan-700 hover:bg-cyan-200 dark:bg-cyan-900/30 dark:text-cyan-400' },
+  { label: 'Opus 4.5', from: 'claude-opus-4-5-thinking', to: 'us.anthropic.claude-opus-4-5-20251101-v1:0', color: 'bg-pink-100 text-pink-700 hover:bg-pink-200 dark:bg-pink-900/30 dark:text-pink-400' },
+  { label: 'Sonnet 4.5', from: 'claude-sonnet-4-5', to: 'us.anthropic.claude-sonnet-4-5-20250929-v1:0', color: 'bg-cyan-100 text-cyan-700 hover:bg-cyan-200 dark:bg-cyan-900/30 dark:text-cyan-400' },
+  { label: 'Haiku 4.5', from: 'claude-haiku-4-5', to: 'us.anthropic.claude-haiku-4-5-20251001-v1:0', color: 'bg-green-100 text-green-700 hover:bg-green-200 dark:bg-green-900/30 dark:text-green-400' },
+  { label: 'Llama 3.1 405B', from: 'llama3-1-405b-instruct', to: 'meta.llama3-1-405b-instruct-v1:0', color: 'bg-blue-100 text-blue-700 hover:bg-blue-200 dark:bg-blue-900/30 dark:text-blue-400' },
+  { label: 'Llama 3.1 70B', from: 'llama3-1-70b-instruct', to: 'meta.llama3-1-70b-instruct-v1:0', color: 'bg-blue-100 text-blue-700 hover:bg-blue-200 dark:bg-blue-900/30 dark:text-blue-400' },
+  { label: 'Mistral Large', from: 'mistral-large', to: 'mistral.mistral-large-2407-v1:0', color: 'bg-orange-100 text-orange-700 hover:bg-orange-200 dark:bg-orange-900/30 dark:text-orange-400' },
+]
+
 // Antigravity 默认映射（从后端 API 获取，与 constants.go 保持一致）
 // 使用 fetchAntigravityDefaultMappings() 异步获取
 import { getAntigravityDefaultModelMapping } from '@/api/admin/accounts'
@@ -354,6 +385,7 @@ export function getModelsByPlatform(platform: string): string[] {
     case 'claude': return claudeModels
     case 'gemini': return geminiModels
     case 'antigravity': return antigravityModels
+    case 'aws': return awsBedrockModels
     case 'zhipu': return zhipuModels
     case 'qwen': return qwenModels
     case 'deepseek': return deepseekModels
@@ -379,6 +411,7 @@ export function getPresetMappingsByPlatform(platform: string) {
   if (platform === 'gemini') return geminiPresetMappings
   if (platform === 'antigravity') return antigravityPresetMappings
   if (platform === 'bedrock') return bedrockPresetMappings
+  if (platform === 'aws') return awsBedrockPresetMappings
   return anthropicPresetMappings
 }
 

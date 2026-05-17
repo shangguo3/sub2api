@@ -976,6 +976,91 @@
         </div>
       </div>
 
+      <!-- AWS Platform fields -->
+      <div v-if="account.platform === 'aws'" class="space-y-4">
+        <!-- IAM Access Key fields -->
+        <template v-if="account.type === 'bedrock'">
+          <div>
+            <label class="input-label">AWS Access Key ID</label>
+            <input v-model="editAWSAccessKeyId" type="text" class="input font-mono" placeholder="AKIA..." />
+          </div>
+          <div>
+            <label class="input-label">AWS Secret Access Key</label>
+            <input v-model="editAWSSecretAccessKey" type="password" class="input font-mono" :placeholder="t('admin.accounts.leaveEmptyToKeep')" />
+          </div>
+          <div>
+            <label class="input-label">Session Token</label>
+            <input v-model="editAWSSessionToken" type="password" class="input font-mono" :placeholder="t('admin.accounts.leaveEmptyToKeep')" />
+            <p class="input-hint">{{ t('admin.accounts.bedrockSessionTokenHint') }}</p>
+          </div>
+        </template>
+
+        <!-- IAM Role/STS fields -->
+        <template v-if="account.type === 'iam_role'">
+          <div>
+            <label class="input-label">Role ARN</label>
+            <input v-model="editAWSRoleArn" type="text" class="input font-mono" placeholder="arn:aws:iam::123456789012:role/..." />
+          </div>
+          <div>
+            <label class="input-label">External ID</label>
+            <input v-model="editAWSExternalId" type="text" class="input font-mono" />
+            <p class="input-hint">{{ t('admin.accounts.awsExternalIdHint') }}</p>
+          </div>
+          <div>
+            <label class="input-label">Source Access Key ID</label>
+            <input v-model="editAWSSourceAccessKeyId" type="text" class="input font-mono" placeholder="AKIA..." />
+            <p class="input-hint">{{ t('admin.accounts.awsSourceKeyHint') }}</p>
+          </div>
+          <div v-if="editAWSSourceAccessKeyId">
+            <label class="input-label">Source Secret Access Key</label>
+            <input v-model="editAWSSourceSecretAccessKey" type="password" class="input font-mono" :placeholder="t('admin.accounts.leaveEmptyToKeep')" />
+          </div>
+          <div>
+            <label class="input-label">Session Name</label>
+            <input v-model="editAWSSessionName" type="text" class="input font-mono" placeholder="sub2api-session" />
+          </div>
+        </template>
+
+        <!-- AWS SSO fields -->
+        <template v-if="account.type === 'aws_sso'">
+          <div>
+            <label class="input-label">SSO Start URL</label>
+            <input v-model="editAWSSSOStartUrl" type="text" class="input font-mono" />
+          </div>
+          <div>
+            <label class="input-label">SSO Region</label>
+            <input v-model="editAWSSSORegion" type="text" class="input font-mono" />
+          </div>
+          <div>
+            <label class="input-label">SSO Account ID</label>
+            <input v-model="editAWSSSOAccountId" type="text" class="input font-mono" />
+          </div>
+          <div>
+            <label class="input-label">SSO Role Name</label>
+            <input v-model="editAWSSSORole" type="text" class="input font-mono" />
+          </div>
+        </template>
+
+        <!-- Shared: AWS Region -->
+        <div>
+          <label class="input-label">AWS Region</label>
+          <input v-model="editAWSRegion" type="text" class="input" placeholder="us-east-1" />
+        </div>
+
+        <!-- Model Restriction for AWS -->
+        <div class="border-t border-gray-200 pt-4 dark:border-dark-600">
+          <label class="input-label">{{ t('admin.accounts.modelRestriction') }}</label>
+          <div class="mb-4 flex gap-2">
+            <button type="button" @click="modelRestrictionMode = 'whitelist'" :class="['flex-1 rounded-lg px-4 py-2 text-sm font-medium transition-all', modelRestrictionMode === 'whitelist' ? 'bg-primary-100 text-primary-700 dark:bg-primary-900/30 dark:text-primary-400' : 'bg-gray-100 text-gray-600 hover:bg-gray-200 dark:bg-dark-600 dark:text-gray-400 dark:hover:bg-dark-500']">
+              {{ t('admin.accounts.modelWhitelist') }}
+            </button>
+            <button type="button" @click="modelRestrictionMode = 'mapping'" :class="['flex-1 rounded-lg px-4 py-2 text-sm font-medium transition-all', modelRestrictionMode === 'mapping' ? 'bg-primary-100 text-primary-700 dark:bg-primary-900/30 dark:text-primary-400' : 'bg-gray-100 text-gray-600 hover:bg-gray-200 dark:bg-dark-600 dark:text-gray-400 dark:hover:bg-dark-500']">
+              {{ t('admin.accounts.modelMapping') }}
+            </button>
+          </div>
+        </div>
+      </div>
+
       <!-- Antigravity model restriction (applies to all antigravity types) -->
       <!-- Antigravity 只支持模型映射模式，不支持白名单模式 -->
       <div v-if="account.platform === 'antigravity'" class="border-t border-gray-200 pt-4 dark:border-dark-600">
@@ -1501,7 +1586,7 @@
       </div>
       <!-- 配额控制 (非 Anthropic apikey/bedrock) -->
       <div
-        v-else-if="account?.type === 'apikey' || account?.type === 'bedrock'"
+        v-else-if="account?.type === 'apikey' || account?.type === 'bedrock' || account?.type === 'iam_role' || account?.type === 'aws_sso'"
         class="border-t border-gray-200 pt-4 dark:border-dark-600 space-y-4"
       >
         <div class="mb-3">
@@ -2301,6 +2386,20 @@ const isBedrockAPIKeyMode = computed(() =>
   props.account?.type === 'bedrock' &&
   (props.account?.credentials as Record<string, unknown>)?.auth_mode === 'apikey'
 )
+// AWS credentials (edit)
+const editAWSAccessKeyId = ref('')
+const editAWSSecretAccessKey = ref('')
+const editAWSSessionToken = ref('')
+const editAWSRegion = ref('us-east-1')
+const editAWSRoleArn = ref('')
+const editAWSExternalId = ref('')
+const editAWSSourceAccessKeyId = ref('')
+const editAWSSourceSecretAccessKey = ref('')
+const editAWSSessionName = ref('sub2api-session')
+const editAWSSSOStartUrl = ref('')
+const editAWSSSORegion = ref('us-east-1')
+const editAWSSSOAccountId = ref('')
+const editAWSSSORole = ref('')
 const modelMappings = ref<ModelMapping[]>([])
 const openAICompactModelMappings = ref<ModelMapping[]>([])
 const modelRestrictionMode = ref<'whitelist' | 'mapping'>('whitelist')
@@ -2831,6 +2930,58 @@ const syncFormFromAccount = (newAccount: Account | null) => {
       modelMappings.value = []
       allowedModels.value = []
     }
+  } else if (newAccount.platform === 'aws' && newAccount.credentials) {
+    const awsCreds = newAccount.credentials as Record<string, unknown>
+    editAWSRegion.value = (awsCreds.aws_region as string) || 'us-east-1'
+
+    if (newAccount.type === 'bedrock') {
+      editAWSAccessKeyId.value = (awsCreds.aws_access_key_id as string) || ''
+      editAWSSecretAccessKey.value = ''
+      editAWSSessionToken.value = ''
+    } else if (newAccount.type === 'iam_role') {
+      editAWSRoleArn.value = (awsCreds.role_arn as string) || ''
+      editAWSExternalId.value = (awsCreds.external_id as string) || ''
+      editAWSSourceAccessKeyId.value = (awsCreds.source_access_key_id as string) || ''
+      editAWSSourceSecretAccessKey.value = ''
+      editAWSSessionName.value = (awsCreds.session_name as string) || 'sub2api-session'
+    } else if (newAccount.type === 'aws_sso') {
+      editAWSSSOStartUrl.value = (awsCreds.sso_start_url as string) || ''
+      editAWSSSORegion.value = (awsCreds.sso_region as string) || 'us-east-1'
+      editAWSSSOAccountId.value = (awsCreds.sso_account_id as string) || ''
+      editAWSSSORole.value = (awsCreds.sso_role_name as string) || ''
+    }
+
+    // Load quota limits for AWS
+    const awsExtra = (newAccount.extra as Record<string, unknown>) || {}
+    editQuotaLimit.value = typeof awsExtra.quota_limit === 'number' ? awsExtra.quota_limit : null
+    editQuotaDailyLimit.value = typeof awsExtra.quota_daily_limit === 'number' ? awsExtra.quota_daily_limit : null
+    editQuotaWeeklyLimit.value = typeof awsExtra.quota_weekly_limit === 'number' ? awsExtra.quota_weekly_limit : null
+    loadQuotaNotifyFromExtra(awsExtra)
+
+    // Load model mappings for AWS
+    const existingMappings = awsCreds.model_mapping as Record<string, string> | undefined
+    if (existingMappings && typeof existingMappings === 'object') {
+      const entries = Object.entries(existingMappings)
+      const isWhitelistMode = entries.length > 0 && entries.every(([from, to]) => from === to)
+      if (isWhitelistMode) {
+        modelRestrictionMode.value = 'whitelist'
+        allowedModels.value = entries.map(([from]) => from)
+        modelMappings.value = []
+      } else {
+        modelRestrictionMode.value = 'mapping'
+        modelMappings.value = entries.map(([from, to]) => ({ from, to }))
+        allowedModels.value = []
+      }
+    } else {
+      modelRestrictionMode.value = 'whitelist'
+      modelMappings.value = []
+      allowedModels.value = []
+    }
+
+    poolModeEnabled.value = awsCreds.pool_mode === true
+    poolModeRetryCount.value = normalizePoolModeRetryCount(
+      Number(awsCreds.pool_mode_retry_count ?? DEFAULT_POOL_MODE_RETRY_COUNT)
+    )
   } else if (newAccount.type === 'upstream' && newAccount.credentials) {
     const credentials = newAccount.credentials as Record<string, unknown>
     editBaseUrl.value = (credentials.base_url as string) || ''
@@ -3540,6 +3691,65 @@ const handleSubmit = async () => {
       }
 
       updatePayload.credentials = newCredentials
+    } else if (props.account.platform === 'aws') {
+      const currentCredentials = (props.account.credentials as Record<string, unknown>) || {}
+      const newCredentials: Record<string, unknown> = { ...currentCredentials }
+
+      newCredentials.aws_region = editAWSRegion.value.trim() || 'us-east-1'
+
+      const awsType = props.account.type as string
+      if (awsType === 'bedrock') {
+        newCredentials.aws_access_key_id = editAWSAccessKeyId.value.trim()
+        if (editAWSSecretAccessKey.value.trim()) {
+          newCredentials.aws_secret_access_key = editAWSSecretAccessKey.value.trim()
+        }
+        if (editAWSSessionToken.value.trim()) {
+          newCredentials.aws_session_token = editAWSSessionToken.value.trim()
+        }
+      } else if (awsType === 'iam_role') {
+        newCredentials.role_arn = editAWSRoleArn.value.trim()
+        if (editAWSExternalId.value.trim()) {
+          newCredentials.external_id = editAWSExternalId.value.trim()
+        } else {
+          delete newCredentials.external_id
+        }
+        if (editAWSSourceAccessKeyId.value.trim()) {
+          newCredentials.source_access_key_id = editAWSSourceAccessKeyId.value.trim()
+          if (editAWSSourceSecretAccessKey.value.trim()) {
+            newCredentials.source_secret_access_key = editAWSSourceSecretAccessKey.value.trim()
+          }
+        }
+        newCredentials.session_name = editAWSSessionName.value.trim() || 'sub2api-session'
+      } else if (awsType === 'aws_sso') {
+        newCredentials.sso_start_url = editAWSSSOStartUrl.value.trim()
+        newCredentials.sso_region = editAWSSSORegion.value.trim() || 'us-east-1'
+        newCredentials.sso_account_id = editAWSSSOAccountId.value.trim()
+        newCredentials.sso_role_name = editAWSSSORole.value.trim()
+      }
+
+      // Pool mode
+      if (poolModeEnabled.value) {
+        newCredentials.pool_mode = true
+        newCredentials.pool_mode_retry_count = normalizePoolModeRetryCount(poolModeRetryCount.value)
+      } else {
+        delete newCredentials.pool_mode
+        delete newCredentials.pool_mode_retry_count
+      }
+
+      // Model mapping
+      const modelMapping = buildModelMappingObject(modelRestrictionMode.value, allowedModels.value, modelMappings.value)
+      if (modelMapping) {
+        newCredentials.model_mapping = modelMapping
+      } else {
+        delete newCredentials.model_mapping
+      }
+
+      applyInterceptWarmup(newCredentials, interceptWarmupRequests.value, 'edit')
+      if (!applyTempUnschedConfig(newCredentials)) {
+        return
+      }
+
+      updatePayload.credentials = newCredentials
     } else {
       // For oauth/setup-token types, only update intercept_warmup_requests if changed
       const currentCredentials = (props.account.credentials as Record<string, unknown>) || {}
@@ -3777,7 +3987,7 @@ const handleSubmit = async () => {
     }
 
     // For apikey/bedrock accounts, handle quota_limit in extra
-    if (props.account.type === 'apikey' || props.account.type === 'bedrock') {
+    if (props.account.type === 'apikey' || props.account.type === 'bedrock' || props.account.type === 'iam_role' || props.account.type === 'aws_sso') {
       const currentExtra = (updatePayload.extra as Record<string, unknown>) ||
         (props.account.extra as Record<string, unknown>) || {}
       const newExtra: Record<string, unknown> = { ...currentExtra }

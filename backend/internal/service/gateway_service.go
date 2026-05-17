@@ -570,6 +570,7 @@ type GatewayService struct {
 	debugGatewayBodyFile  atomic.Pointer[os.File] // non-nil when SUB2API_DEBUG_GATEWAY_BODY is set
 	tlsFPProfileService   *TLSFingerprintProfileService
 	balanceNotifyService  *BalanceNotifyService
+	awsSTSService         *AWSSTSService
 }
 
 // NewGatewayService creates a new GatewayService
@@ -600,6 +601,7 @@ func NewGatewayService(
 	channelService *ChannelService,
 	resolver *ModelPricingResolver,
 	balanceNotifyService *BalanceNotifyService,
+	awsSTSService *AWSSTSService,
 ) *GatewayService {
 	userGroupRateTTL := resolveUserGroupRateCacheTTL(cfg)
 	modelsListTTL := resolveModelsListCacheTTL(cfg)
@@ -635,6 +637,7 @@ func NewGatewayService(
 		channelService:       channelService,
 		resolver:             resolver,
 		balanceNotifyService: balanceNotifyService,
+		awsSTSService:        awsSTSService,
 	}
 	svc.userGroupRateResolver = newUserGroupRateResolver(
 		userGroupRateRepo,
@@ -3718,6 +3721,10 @@ func (s *GatewayService) isModelSupportedByAccount(account *Account, requestedMo
 		_, ok := ResolveBedrockModelID(account, requestedModel)
 		return ok
 	}
+	if account.IsAWS() {
+		_, ok := ResolveAWSBedrockModelID(account, requestedModel)
+		return ok
+	}
 	// OpenAI 透传模式：仅替换认证，允许所有模型
 	if account.Platform == PlatformOpenAI && account.IsOpenAIPassthroughEnabled() {
 		return true
@@ -3748,6 +3755,8 @@ func (s *GatewayService) GetAccessToken(ctx context.Context, account *Account) (
 		return apiKey, "apikey", nil
 	case AccountTypeBedrock:
 		return "", "bedrock", nil // Bedrock 使用 SigV4 签名或 API Key，由 forwardBedrock 处理
+	case AccountTypeIAMRole, AccountTypeAWSSSO:
+		return "", "aws_bedrock", nil // AWS 平台使用 SigV4 签名，由 forwardAWSBedrock 处理
 	case AccountTypeServiceAccount:
 		if account.Platform != PlatformAnthropic {
 			return "", "", fmt.Errorf("unsupported service account platform: %s", account.Platform)
@@ -4374,6 +4383,10 @@ func (s *GatewayService) Forward(ctx context.Context, c *gin.Context, account *A
 
 	if account != nil && account.IsBedrock() {
 		return s.forwardBedrock(ctx, c, account, parsed, startTime)
+	}
+
+	if account != nil && account.IsAWS() {
+		return s.forwardAWSBedrock(ctx, c, account, parsed, startTime)
 	}
 
 	// Beta policy: evaluate once; block check + cache filter set for buildUpstreamRequest.
@@ -5703,6 +5716,113 @@ func (s *GatewayService) forwardBedrock(
 	}
 
 	// 响应处理
+	var usage *ClaudeUsage
+	var firstTokenMs *int
+	var clientDisconnect bool
+	if reqStream {
+		streamResult, err := s.handleBedrockStreamingResponse(ctx, resp, c, account, startTime, reqModel)
+		if err != nil {
+			return nil, err
+		}
+		usage = streamResult.usage
+		firstTokenMs = streamResult.firstTokenMs
+		clientDisconnect = streamResult.clientDisconnect
+	} else {
+		usage, err = s.handleBedrockNonStreamingResponse(ctx, resp, c, account)
+		if err != nil {
+			return nil, err
+		}
+	}
+	if usage == nil {
+		usage = &ClaudeUsage{}
+	}
+
+	return &ForwardResult{
+		RequestID:        resp.Header.Get("x-amzn-requestid"),
+		Usage:            *usage,
+		Model:            reqModel,
+		UpstreamModel:    mappedModel,
+		Stream:           reqStream,
+		Duration:         time.Since(startTime),
+		FirstTokenMs:     firstTokenMs,
+		ClientDisconnect: clientDisconnect,
+	}, nil
+}
+
+// forwardAWSBedrock 转发请求到 AWS Bedrock（AWS 独立平台）
+func (s *GatewayService) forwardAWSBedrock(
+	ctx context.Context,
+	c *gin.Context,
+	account *Account,
+	parsed *ParsedRequest,
+	startTime time.Time,
+) (*ForwardResult, error) {
+	reqModel := parsed.Model
+	reqStream := parsed.Stream
+	body := parsed.Body
+
+	region := account.GetAWSRegion()
+	mappedModel, ok := ResolveAWSBedrockModelID(account, reqModel)
+	if !ok {
+		return nil, fmt.Errorf("unsupported aws bedrock model: %s", reqModel)
+	}
+	if mappedModel != reqModel {
+		logger.LegacyPrintf("service.gateway", "[AWSBedrock] Model mapping: %s -> %s (account: %s)", reqModel, mappedModel, account.Name)
+	}
+
+	betaHeader := ""
+	if c != nil && c.Request != nil {
+		betaHeader = c.GetHeader("anthropic-beta")
+	}
+
+	betaTokens, err := s.resolveBedrockBetaTokensForRequest(ctx, account, betaHeader, body, mappedModel)
+	if err != nil {
+		return nil, err
+	}
+
+	bedrockBody, err := PrepareBedrockRequestBodyWithTokens(body, mappedModel, betaTokens)
+	if err != nil {
+		return nil, fmt.Errorf("prepare aws bedrock request body: %w", err)
+	}
+
+	proxyURL := ""
+	if account.ProxyID != nil && account.Proxy != nil {
+		proxyURL = account.Proxy.URL()
+	}
+
+	logger.LegacyPrintf("service.gateway", "[AWSBedrock] 命中 AWS Bedrock 分支: account=%d name=%s model=%s->%s stream=%v",
+		account.ID, account.Name, reqModel, mappedModel, reqStream)
+
+	// 对于 IAM Role/STS 和 AWS SSO 账号，检查并刷新临时凭证
+	if account.NeedsAWSCredentialRefresh() {
+		if s.awsSTSService != nil {
+			if refreshErr := s.awsSTSService.RefreshCredentials(ctx, account); refreshErr != nil {
+				return nil, fmt.Errorf("refresh aws credentials: %w", refreshErr)
+			}
+		} else {
+			return nil, fmt.Errorf("aws credentials expired and no STS service configured")
+		}
+	}
+
+	signer, err := NewBedrockSignerFromAWSAccount(account)
+	if err != nil {
+		return nil, fmt.Errorf("create aws bedrock signer: %w", err)
+	}
+
+	resp, err := s.executeBedrockUpstream(ctx, c, account, bedrockBody, mappedModel, region, reqStream, signer, "", proxyURL)
+	if err != nil {
+		return nil, err
+	}
+	defer func() { _ = resp.Body.Close() }()
+
+	if awsReqID := resp.Header.Get("x-amzn-requestid"); awsReqID != "" && resp.Header.Get("x-request-id") == "" {
+		resp.Header.Set("x-request-id", awsReqID)
+	}
+
+	if resp.StatusCode >= 400 {
+		return s.handleBedrockUpstreamErrors(ctx, resp, c, account)
+	}
+
 	var usage *ClaudeUsage
 	var firstTokenMs *int
 	var clientDisconnect bool
