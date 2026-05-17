@@ -679,6 +679,10 @@ func (s *ChannelService) Create(ctx context.Context, input *CreateChannelInput) 
 		return nil, err
 	}
 
+	var headerOverride *string
+	if input.HeaderOverride != "" {
+		headerOverride = &input.HeaderOverride
+	}
 	channel := &Channel{
 		Name:                       input.Name,
 		Description:                input.Description,
@@ -692,6 +696,7 @@ func (s *ChannelService) Create(ctx context.Context, input *CreateChannelInput) 
 		FeaturesConfig:             input.FeaturesConfig,
 		ApplyPricingToAccountStats: input.ApplyPricingToAccountStats,
 		AccountStatsPricingRules:   input.AccountStatsPricingRules,
+		HeaderOverride:             headerOverride,
 	}
 	channel.normalizeBillingModelSource()
 
@@ -812,6 +817,9 @@ func (s *ChannelService) applyUpdateInput(ctx context.Context, channel *Channel,
 	}
 	if input.AccountStatsPricingRules != nil {
 		channel.AccountStatsPricingRules = *input.AccountStatsPricingRules
+	}
+	if input.HeaderOverride != nil {
+		channel.HeaderOverride = input.HeaderOverride
 	}
 	return nil
 }
@@ -991,6 +999,7 @@ type CreateChannelInput struct {
 	FeaturesConfig             map[string]any
 	ApplyPricingToAccountStats bool
 	AccountStatsPricingRules   []AccountStatsPricingRule
+	HeaderOverride             string // 请求头覆盖 JSON 配置
 }
 
 // UpdateChannelInput 更新渠道输入
@@ -1007,4 +1016,5 @@ type UpdateChannelInput struct {
 	FeaturesConfig             map[string]any
 	ApplyPricingToAccountStats *bool
 	AccountStatsPricingRules   *[]AccountStatsPricingRule
+	HeaderOverride             *string // 请求头覆盖 JSON 配置
 }

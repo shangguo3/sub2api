@@ -4367,6 +4367,11 @@ func (s *GatewayService) Forward(ctx context.Context, c *gin.Context, account *A
 		})
 	}
 
+	// 注入 groupID 到 context，供所有路径（含 Bedrock）的 buildUpstreamRequest 查找渠道请求头覆盖
+	if parsed.GroupID != nil {
+		ctx = WithHeaderOverrideGroupID(ctx, *parsed.GroupID)
+	}
+
 	if account != nil && account.IsBedrock() {
 		return s.forwardBedrock(ctx, c, account, parsed, startTime)
 	}
@@ -5211,6 +5216,13 @@ func (s *GatewayService) forwardAnthropicAPIKeyPassthroughWithInput(
 	}, nil
 }
 
+// applyChannelHeaderOverride 从渠道缓存中查找请求头覆盖配置并应用到上游请求。
+// 通过 Go context 获取 groupID（由 Forward 方法注入），从 channelService 缓存中查找对应渠道的 HeaderOverride。
+// 此方法在所有其他 header 设置之后调用，确保覆盖具有最高优先级。
+func (s *GatewayService) applyChannelHeaderOverride(ctx context.Context, req *http.Request, token string, clientHeaders http.Header) {
+	ApplyChannelHeaderOverrideFromContext(ctx, s.channelService, req, token, clientHeaders)
+}
+
 func (s *GatewayService) buildUpstreamRequestAnthropicAPIKeyPassthrough(
 	ctx context.Context,
 	c *gin.Context,
@@ -5259,6 +5271,13 @@ func (s *GatewayService) buildUpstreamRequestAnthropicAPIKeyPassthrough(
 	if getHeaderRaw(req.Header, "anthropic-version") == "" {
 		setHeaderRaw(req.Header, "anthropic-version", "2023-06-01")
 	}
+
+	// 渠道请求头覆盖（最高优先级）
+	clientHeaders := http.Header{}
+	if c != nil && c.Request != nil {
+		clientHeaders = c.Request.Header
+	}
+	s.applyChannelHeaderOverride(ctx, req, token, clientHeaders)
 
 	return req, nil
 }
@@ -5743,6 +5762,13 @@ func (s *GatewayService) executeBedrockUpstream(
 			return nil, err
 		}
 
+		// 应用渠道请求头覆盖（Bedrock 路径）
+		var clientHeaders http.Header
+		if c != nil && c.Request != nil {
+			clientHeaders = c.Request.Header
+		}
+		s.applyChannelHeaderOverride(ctx, upstreamReq, apiKey, clientHeaders)
+
 		resp, err = s.httpUpstream.DoWithTLS(upstreamReq, proxyURL, account.ID, account.Concurrency, nil)
 		if err != nil {
 			if resp != nil && resp.Body != nil {
@@ -6146,6 +6172,9 @@ func (s *GatewayService) buildUpstreamRequest(ctx context.Context, c *gin.Contex
 		logClaudeMimicDebug(req, body, account, tokenType, mimicClaudeCode)
 	}
 
+	// 渠道请求头覆盖（最高优先级，在所有 header 设置之后应用）
+	s.applyChannelHeaderOverride(ctx, req, token, clientHeaders)
+
 	return req, nil
 }
 
@@ -6199,6 +6228,13 @@ func (s *GatewayService) buildUpstreamRequestAnthropicVertex(
 		"model":      modelID,
 		"stream":     strconv.FormatBool(reqStream),
 	})
+
+	// 渠道请求头覆盖（最高优先级）
+	clientHeaders := http.Header{}
+	if c != nil && c.Request != nil {
+		clientHeaders = c.Request.Header
+	}
+	s.applyChannelHeaderOverride(ctx, req, token, clientHeaders)
 
 	return req, nil
 }

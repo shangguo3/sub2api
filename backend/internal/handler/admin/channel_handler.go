@@ -38,6 +38,7 @@ type createChannelRequest struct {
 	FeaturesConfig             map[string]any                   `json:"features_config"`
 	ApplyPricingToAccountStats bool                             `json:"apply_pricing_to_account_stats"`
 	AccountStatsPricingRules   []accountStatsPricingRuleRequest `json:"account_stats_pricing_rules"`
+	HeaderOverride             string                           `json:"header_override"`
 }
 
 type updateChannelRequest struct {
@@ -53,6 +54,7 @@ type updateChannelRequest struct {
 	FeaturesConfig             map[string]any                    `json:"features_config"`
 	ApplyPricingToAccountStats *bool                             `json:"apply_pricing_to_account_stats"`
 	AccountStatsPricingRules   *[]accountStatsPricingRuleRequest `json:"account_stats_pricing_rules"`
+	HeaderOverride             *string                           `json:"header_override"`
 }
 
 type channelModelPricingRequest struct {
@@ -101,6 +103,7 @@ type channelResponse struct {
 	ModelMapping               map[string]map[string]string      `json:"model_mapping"`
 	ApplyPricingToAccountStats bool                              `json:"apply_pricing_to_account_stats"`
 	AccountStatsPricingRules   []accountStatsPricingRuleResponse `json:"account_stats_pricing_rules"`
+	HeaderOverride             *string                           `json:"header_override"`
 	CreatedAt                  string                            `json:"created_at"`
 	UpdatedAt                  string                            `json:"updated_at"`
 }
@@ -158,6 +161,7 @@ func channelToResponse(ch *service.Channel) *channelResponse {
 		UpdatedAt:      ch.UpdatedAt.Format("2006-01-02T15:04:05Z"),
 	}
 	resp.BillingModelSource = ch.BillingModelSource
+	resp.HeaderOverride = ch.HeaderOverride
 	if resp.GroupIDs == nil {
 		resp.GroupIDs = []int64{}
 	}
@@ -383,6 +387,7 @@ func (h *ChannelHandler) Create(c *gin.Context) {
 		FeaturesConfig:             req.FeaturesConfig,
 		ApplyPricingToAccountStats: req.ApplyPricingToAccountStats,
 		AccountStatsPricingRules:   statsRules,
+		HeaderOverride:             req.HeaderOverride,
 	})
 	if err != nil {
 		response.ErrorFrom(c, err)
@@ -418,6 +423,7 @@ func (h *ChannelHandler) Update(c *gin.Context) {
 		Features:                   req.Features,
 		FeaturesConfig:             req.FeaturesConfig,
 		ApplyPricingToAccountStats: req.ApplyPricingToAccountStats,
+		HeaderOverride:             req.HeaderOverride,
 	}
 	if req.ModelPricing != nil {
 		pricing := pricingRequestToService(*req.ModelPricing)

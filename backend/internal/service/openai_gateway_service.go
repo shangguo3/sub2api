@@ -2045,6 +2045,14 @@ func (s *OpenAIGatewayService) Forward(ctx context.Context, c *gin.Context, acco
 		}
 		return nil, errors.New("openai ws v1 is temporarily unsupported; use ws v2")
 	}
+	// 提前注入 groupID 到 context，供所有路径（含 passthrough）的 buildUpstreamRequest 查找渠道请求头覆盖
+	{
+		earlyAPIKey := getAPIKeyFromContext(c)
+		if earlyAPIKey != nil && earlyAPIKey.GroupID != nil {
+			ctx = WithHeaderOverrideGroupID(ctx, *earlyAPIKey.GroupID)
+		}
+	}
+
 	passthroughEnabled := account.IsOpenAIPassthroughEnabled()
 	if passthroughEnabled {
 		// 透传分支只需要轻量提取字段，避免热路径全量 Unmarshal。
@@ -2070,6 +2078,7 @@ func (s *OpenAIGatewayService) Forward(ctx context.Context, c *gin.Context, acco
 		}
 	}
 	apiKey := getAPIKeyFromContext(c)
+
 	imageGenerationAllowed := GroupAllowsImageGeneration(nil)
 	if apiKey != nil {
 		imageGenerationAllowed = GroupAllowsImageGeneration(apiKey.Group)
@@ -3210,6 +3219,13 @@ func (s *OpenAIGatewayService) buildUpstreamRequestOpenAIPassthrough(
 		req.Header.Set("content-type", "application/json")
 	}
 
+	// 应用渠道请求头覆盖（最高优先级，覆盖所有前置 header 设置）
+	var clientHeaders http.Header
+	if c != nil && c.Request != nil {
+		clientHeaders = c.Request.Header
+	}
+	ApplyChannelHeaderOverrideFromContext(ctx, s.channelService, req, token, clientHeaders)
+
 	return req, nil
 }
 
@@ -3914,6 +3930,13 @@ func (s *OpenAIGatewayService) buildUpstreamRequest(ctx context.Context, c *gin.
 	if req.Header.Get("content-type") == "" {
 		req.Header.Set("content-type", "application/json")
 	}
+
+	// 应用渠道请求头覆盖（最高优先级，覆盖所有前置 header 设置）
+	var clientHeaders http.Header
+	if c != nil && c.Request != nil {
+		clientHeaders = c.Request.Header
+	}
+	ApplyChannelHeaderOverrideFromContext(ctx, s.channelService, req, token, clientHeaders)
 
 	return req, nil
 }

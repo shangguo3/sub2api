@@ -56,6 +56,7 @@ export interface Channel {
   model_mapping: Record<string, Record<string, string>> // platform → {src→dst}
   apply_pricing_to_account_stats: boolean
   account_stats_pricing_rules: AccountStatsPricingRule[]
+  header_override?: string | null
   created_at: string
   updated_at: string
 }
@@ -71,6 +72,7 @@ export interface CreateChannelRequest {
   features_config?: Record<string, unknown>
   apply_pricing_to_account_stats?: boolean
   account_stats_pricing_rules?: AccountStatsPricingRule[]
+  header_override?: string
 }
 
 export interface UpdateChannelRequest {
@@ -85,6 +87,7 @@ export interface UpdateChannelRequest {
   features_config?: Record<string, unknown>
   apply_pricing_to_account_stats?: boolean
   account_stats_pricing_rules?: AccountStatsPricingRule[]
+  header_override?: string
 }
 
 interface PaginatedResponse<T> {

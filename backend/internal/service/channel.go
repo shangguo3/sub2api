@@ -54,6 +54,11 @@ type Channel struct {
 	// 账号统计定价
 	ApplyPricingToAccountStats bool                      // 是否应用渠道模型定价到账号统计
 	AccountStatsPricingRules   []AccountStatsPricingRule // 自定义账号统计定价规则（按 SortOrder 排序，先命中为准）
+
+	// 请求头覆盖（JSON 对象字符串，可选）
+	// 支持格式：{"Header-Name": "value", "*": true, "re:<pattern>": true}
+	// 占位符：{api_key}、{client_header:X-Foo}
+	HeaderOverride *string
 }
 
 // AccountStatsPricingRule 账号统计定价规则
@@ -211,6 +216,10 @@ func (c *Channel) Clone() *Channel {
 	}
 	if c.FeaturesConfig != nil {
 		cp.FeaturesConfig = deepCopyFeaturesConfig(c.FeaturesConfig)
+	}
+	if c.HeaderOverride != nil {
+		v := *c.HeaderOverride
+		cp.HeaderOverride = &v
 	}
 	if c.AccountStatsPricingRules != nil {
 		cp.AccountStatsPricingRules = make([]AccountStatsPricingRule, len(c.AccountStatsPricingRules))

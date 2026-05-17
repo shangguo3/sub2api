@@ -269,6 +269,37 @@
                 />
               </div>
             </div>
+
+            <!-- Header Override -->
+            <div class="border-t border-gray-200 pt-4 dark:border-dark-700">
+              <label class="input-label">{{ t('admin.channels.form.headerOverride', '请求头覆盖') }}</label>
+              <p class="mb-2 text-xs text-gray-400">
+                {{ t('admin.channels.form.headerOverrideHint', 'JSON 格式，自定义上游请求 Header。支持占位符 {api_key}、{client_header:X-Foo}，通配符透传 {"*": true}，正则透传 {"re:<pattern>": true}') }}
+              </p>
+              <textarea
+                v-model="form.header_override"
+                rows="4"
+                class="input font-mono text-xs"
+                :placeholder='`{"X-Custom-Header": "value", "Authorization": "Bearer {api_key}"}`'
+              ></textarea>
+              <div class="mt-1.5 flex flex-wrap gap-1.5">
+                <button
+                  type="button"
+                  class="rounded border border-gray-200 px-2 py-0.5 text-xs text-gray-500 hover:bg-gray-50 dark:border-dark-600 dark:text-gray-400 dark:hover:bg-dark-700"
+                  @click="form.header_override = '{\"*\": true}'"
+                >{{ t('admin.channels.form.headerOverrideWildcard', '全部透传') }}</button>
+                <button
+                  type="button"
+                  class="rounded border border-gray-200 px-2 py-0.5 text-xs text-gray-500 hover:bg-gray-50 dark:border-dark-600 dark:text-gray-400 dark:hover:bg-dark-700"
+                  @click="form.header_override = '{\"Authorization\": \"Bearer {api_key}\"}'"
+                >{{ t('admin.channels.form.headerOverrideAuth', 'Bearer Token') }}</button>
+                <button
+                  type="button"
+                  class="rounded border border-gray-200 px-2 py-0.5 text-xs text-gray-500 hover:bg-gray-50 dark:border-dark-600 dark:text-gray-400 dark:hover:bg-dark-700"
+                  @click="form.header_override = '{\"re:^X-\": true}'"
+                >{{ t('admin.channels.form.headerOverrideRegex', '透传 X- 前缀') }}</button>
+              </div>
+            </div>
           </div>
 
           <!-- Platform Tab Content -->
@@ -729,6 +760,7 @@ const form = reactive({
   billing_model_source: 'channel_mapped' as string,
   platforms: [] as PlatformSection[],
   apply_pricing_to_account_stats: false,
+  header_override: '',
 })
 
 let abortController: AbortController | null = null
@@ -1231,6 +1263,7 @@ function resetForm() {
   form.billing_model_source = 'channel_mapped'
   form.platforms = []
   form.apply_pricing_to_account_stats = false
+  form.header_override = ''
   activeTab.value = 'basic'
   ruleAccountSearchRunner.clearAll()
   clearAllRuleAccountSearchState()
@@ -1252,6 +1285,7 @@ async function openEditDialog(channel: Channel) {
   form.restrict_models = channel.restrict_models || false
   form.billing_model_source = channel.billing_model_source || 'channel_mapped'
   form.apply_pricing_to_account_stats = channel.apply_pricing_to_account_stats || false
+  form.header_override = channel.header_override || ''
   // Must load groups first so apiToForm can map groupID → platform
   await Promise.all([loadGroups(), loadAllChannelsForConflict()])
   form.platforms = apiToForm(channel)
@@ -1445,7 +1479,8 @@ async function handleSubmit() {
         restrict_models: form.restrict_models,
         features_config,
         apply_pricing_to_account_stats: form.apply_pricing_to_account_stats,
-        account_stats_pricing_rules: accountStatsRulesToAPI()
+        account_stats_pricing_rules: accountStatsRulesToAPI(),
+        header_override: form.header_override.trim() || undefined,
       }
       await adminAPI.channels.update(editingChannel.value.id, req)
       appStore.showSuccess(t('admin.channels.updateSuccess', 'Channel updated'))
@@ -1460,7 +1495,8 @@ async function handleSubmit() {
         restrict_models: form.restrict_models,
         features_config,
         apply_pricing_to_account_stats: form.apply_pricing_to_account_stats,
-        account_stats_pricing_rules: accountStatsRulesToAPI()
+        account_stats_pricing_rules: accountStatsRulesToAPI(),
+        header_override: form.header_override.trim() || undefined,
       }
       await adminAPI.channels.create(req)
       appStore.showSuccess(t('admin.channels.createSuccess', 'Channel created'))
